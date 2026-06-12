@@ -1,0 +1,214 @@
+const crypto = require('crypto‘);
+const bcrypt = require('bcryptjs');
+
+// Config (overridable via env)
+const OTP_TTL_MS = (parseInt(process.env.OTP_TTL_MIN, 10) || 5) * 60 * 1000; // default 5 min
+const OTP_MAX_ATTEMPTS = parseInt(process.env.OTP_MAX_ATTEMPTS, 10) || 5;
+const OTP_RESEND_COOLDOWN_MS = (parseInt(process.env.OTP_RESEND_SEC, 10) || 60) * 1000; // 60s between sends
+
+// Which email transport to use. Auto-detect by default:
+//   EMAIL_PROVIDER=smtp    -> use SMTP (e.g. Gmail app password)
+//   EMAIL_PROVIDER=resend  -> use Resend
+//   EMAIL_PROVIDER=console -> never send, just log (dev)
+//   (unset/auto)           -> SMTP if SMTP_USER set, else Resend if key set, else console
+function selectedProvider() {
+  const p = (process.env.EMAIL_PROVIDER || 'auto‘).toLowerCase();
+  if (p === 'smtp' || p === 'resend' || p === 'console') return p;
+  if (process.env.SMTP_USER && process.env.SMTP_PASS) return 'smtp';
+  if (process.env.RESEND_API_KEY) return 'resend';
+  return 'console';
+}
+
+// Lazily-constructed Resend client (only if a key is present)
+let resendClient = null;
+function getResend() {
+  if (resendClient) return resendClient;
+  if (!process.env.RESEND_API_KEY) return null;
+  try {
+    const { Resend } = require('resend');
+    resendClient = new Resend(process.env.RESEND_API_KEY);
+    return resendClient;
+  } catch (err) {
+    console.error('[OTP] Resend SDK yuklab bo\'lmadi:', err.message);
+    return null;
+  }
+}
+
+// Lazily-constructed SMTP (nodemailer) transport
+let smtpTransport = null;
+function getSmtp() {
+  if (smtpTransport) return smtpTransport;
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) return null;
+  try {
+    const nodemailer = require('nodemailer');
+    // SMTP_SERVICE (e.g. "gmail") is a shortcut; otherwise use host/port.
+    if (process.env.SMTP_SERVICE) {
+      smtpTransport = nodemailer.createTransport({
+        service: process.env.SMTP_SERVICE,
+        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      });
+    } else {
+      smtpTransport = nodemailer.createTransport({
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: parseInt(process.env.SMTP_PORT, 10) || 587,
+        secure: String(process.env.SMTP_SECURE) === 'true', // true for 465, false for 587
+        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      });
+    }
+    return smtpTransport;
+  } catch (err) {
+    console.error('[OTP] Nodemailer yuklab bo\'lmadi:', err.message);
+    return null;
+  }
+}
+
+function generateCode() {
+  // Cryptographically random 6-digit code
+  return String(crypto.randomInt(0, 1000000)).padStart(6, '0');
+}
+
+/**
+ * Create (or refresh) an OTP for a target identity and email it.
+ * `purpose` namespaces codes (e.g. 'owner-login', 'user-login', 'user-register').
+ * `target` is a stable id (ownerId, phone, email).
+ * Returns { ok, cooldown?, devCode? }.
+ */
+async function issueOtp(db, { purpose, target, email, name }) {
+  const now = Date.now();
+  const existing = await db.otps.findOne({ purpose, target });
+
+  if (existing && existing.lastSentAt && now - new Date(existing.lastSentAt).getTime() < OTP_RESEND_COOLDOWN_MS) {
+    const wait = Math.ceil((OTP_RESEND_COOLDOWN_MS - (now - new Date(existing.lastSentAt).getTime())) / 1000);
+    return { ok: false, cooldown: wait };
+  }
+
+  const code = generateCode();
+  const codeHash = await bcrypt.hash(code, 10);
+  const record = {
+    purpose,
+    target,
+    email,
+    codeHash,
+    attempts: 0,
+    expiresAt: new Date(now + OTP_TTL_MS).toISOString(),
+    lastSentAt: new Date(now).toISOString(),
+    createdAt: new Date(now).toISOString(),
+  };
+
+  await db.otps.remove({ purpose, target }, { multi: true });
+  await db.otps.insert(record);
+
+  const sent = await sendOtpEmail({ email, code, name });
+
+  // In dev (no real email provider) expose the code so the flow is testable.
+  const devCode = sent.viaConsole ? code : undefined;
+  if (sent.viaConsole) {
+    console.log(`\n[OTP] ${purpose} -> ${email || target}: ${code}  (amal qiladi ${OTP_TTL_MS / 60000} daqiqa)\n`);
+  }
+
+  return { ok: true, devCode };
+}
+
+/**
+ * Verify a submitted code. Returns { ok, reason? }.
+ * Reasons: 'not_found', 'expired', 'too_many_attempts', 'invalid'.
+ */
+async function verifyOtp(db, { purpose, target, code }) {
+  const record = await db.otps.findOne({ purpose, target });
+  if (!record) return { ok: false, reason: 'not_found' };
+
+  if (Date.now() > new Date(record.expiresAt).getTime()) {
+    await db.otps.remove({ purpose, target }, { multi: true });
+    return { ok: false, reason: 'expired' };
+  }
+
+  if (record.attempts >= OTP_MAX_ATTEMPTS) {
+    await db.otps.remove({ purpose, target }, { multi: true });
+    return { ok: false, reason: 'too_many_attempts' };
+  }
+
+  const match = await bcrypt.compare(String(code || ''), record.codeHash);
+  if (!match) {
+    await db.otps.update({ _id: record._id }, { $inc: { attempts: 1 } });
+    return { ok: false, reason: 'invalid', remaining: OTP_MAX_ATTEMPTS - record.attempts - 1 };
+  }
+
+  // Success — consume the code
+  await db.otps.remove({ purpose, target }, { multi: true });
+  return { ok: true };
+}
+
+async function sendOtpEmail({ email, code, name }) {
+  const from = process.env.OTP_FROM_EMAIL || 'To\'yxona <onboarding@resend.dev>';
+  const subject = `To‘yxona — tasdiqlash kodi: ${code}`;
+  const html = otpEmailHtml({ code, name });
+
+  if (!email) {
+    console.warn('[OTP] Email manzil yo\'q — kod faqat consolega chiqariladi.');
+    return { viaConsole: true };
+  }
+
+  const provider = selectedProvider();
+
+  if (provider === 'console') {
+    console.warn('[OTP] EMAIL_PROVIDER=console (yoki transport sozlanmagan) — kod faqat consolega chiqariladi.');
+    return { viaConsole: true };
+  }
+
+  // --- SMTP (Gmail / generic) ---
+  if (provider === 'smtp') {
+    const transport = getSmtp();
+    if (!transport) {
+      console.error('[OTP] SMTP tanlangan, lekin SMTP_USER/SMTP_PASS yo\'q. Consolega chiqarilmoqda.');
+      return { viaConsole: true };
+    }
+    try {
+      await transport.sendMail({ from, to: email, subject, html });
+      console.log(`[OTP] SMTP orqali ${email} ga yuborildi.`);
+      return { viaConsole: false };
+    } catch (err) {
+      // Loud failure — do NOT silently swallow.
+      console.error('\n[OTP] ❌ SMTP orqali yuborib bo\'lmadi:', err.message);
+      console.error('      Gmail uchun: 2FA yoqilgan + App Password ishlating (oddiy parol emas).');
+      console.error('      Sozlamalar: https://myaccount.google.com/apppasswords\n');
+      return { viaConsole: true, error: err.message };
+    }
+  }
+
+  // --- Resend ---
+  const resend = getResend();
+  if (!resend) {
+    console.error('[OTP] Resend tanlangan, lekin RESEND_API_KEY yo\'q. Consolega chiqarilmoqda.');
+    return { viaConsole: true };
+  }
+  try {
+    const { error } = await resend.emails.send({ from, to: email, subject, html });
+    if (error) throw new Error(error.message || JSON.stringify(error));
+    console.log(`[OTP] Resend orqali ${email} ga yuborildi.`);
+    return { viaConsole: false };
+  } catch (err) {
+    // Loud failure with the most common cause spelled out.
+    console.error('\n[OTP] ❌ Resend orqali yuborib bo\'lmadi:', err.message);
+    if (/own email address|verify a domain/i.test(err.message)) {
+      console.error('      Resend sandbox (onboarding@resend.dev) faqat sizning Resend akkaunt');
+      console.error('      emailingizga yuboradi. Boshqalarga yuborish uchun domen tasdiqlang:');
+      console.error('      https://resend.com/domains\n');
+    } else {
+      console.error('');
+    }
+    return { viaConsole: true, error: err.message };
+  }
+}
+
+function otpEmailHtml({ code, name }) {
+  return `
+  <div style="font-family:Arial,Helvetica,sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#2C1810">
+    <h2 style="color:#7A3B2E;margin:0 0 8px">To‘yxona</h2>
+    <p style="margin:0 0 16px">Assalomu alaykum${name ? ', ' + name : ''}!</p>
+    <p style="margin:0 0 16px">Tizimga kirish uchun tasdiqlash kodingiz:</p>
+    <div style="font-size:32px;font-weight:bold;letter-spacing:8px;background:#F2E6E3;color:#7A3B2E;padding:16px 0;text-align:center;border-radius:8px">${code}</div>
+    <p style="margin:16px 0 0;color:#6B5B50;font-size:13px">Kod ${OTP_TTL_MS / 60000} daqiqa amal qiladi. Agar bu siz bo‘lmasangiz, bu xatni e'tiborsiz qoldiring.</p>
+  </div>`;
+}
+
+module.exports = { issueOtp, verifyOtp, OTP_TTL_MS };

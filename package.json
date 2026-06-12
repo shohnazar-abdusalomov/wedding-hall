@@ -1,0 +1,14 @@
+{
+  "name": "toyxona-loyihasi",
+  "private": true,
+  "scripts": {
+    "server": "cd server && node server.js",
+    "client": "cd client && npx vite --port 3000",
+    "dev": "npx concurrently \"npm run server\" \"npm run client\"",
+    "seed": "cd server && node seed.js",
+    "start": "npm run dev"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.3"
+  }
+}
