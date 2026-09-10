@@ -16,9 +16,9 @@ export default function PhotoUpload({ photos = [], onChange }) {
     try {
       const fd = new FormData();
       files.forEach(f => fd.append('photos', f));
-      const res = await api.post('/venues/upload-photos', fd, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      // Don't set Content-Type manually — the browser must add the multipart
+      // boundary itself, otherwise the server can't parse the upload.
+      const res = await api.post('/venues/upload-photos', fd);
       onChange([...(photos || []), ...res.data.urls]);
     } catch (err) {
       setError(err.response?.data?.message || 'Yuklashda xatolik');

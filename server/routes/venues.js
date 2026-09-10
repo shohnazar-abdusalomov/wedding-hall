@@ -91,6 +91,8 @@ router.post('/', authMiddleware, async (req, res) => {
       capacity: parseInt(data.capacity),
       pricePerSeat: parseInt(data.pricePerSeat),
       phone: data.phone,
+      lat: data.lat !== undefined && data.lat !== null && data.lat !== '' ? parseFloat(data.lat) : null,
+      lng: data.lng !== undefined && data.lng !== null && data.lng !== '' ? parseFloat(data.lng) : null,
       photos: data.photos ? (typeof data.photos === 'string' ? JSON.parse(data.photos) : data.photos) : [],
       services: {
         singers: data.singers ? (typeof data.singers === 'string' ? JSON.parse(data.singers) : data.singers) : [],
@@ -132,6 +134,8 @@ router.put('/:id', authMiddleware, async (req, res) => {
     if (data.capacity !== undefined) updates.capacity = parseInt(data.capacity);
     if (data.pricePerSeat !== undefined) updates.pricePerSeat = parseInt(data.pricePerSeat);
     if (data.phone !== undefined) updates.phone = data.phone;
+    if (data.lat !== undefined) updates.lat = data.lat !== null && data.lat !== '' ? parseFloat(data.lat) : null;
+    if (data.lng !== undefined) updates.lng = data.lng !== null && data.lng !== '' ? parseFloat(data.lng) : null;
     if (data.photos !== undefined) updates.photos = typeof data.photos === 'string' ? JSON.parse(data.photos) : data.photos;
     if (data.services !== undefined) updates.services = typeof data.services === 'string' ? JSON.parse(data.services) : data.services;
     if (data.singers !== undefined) {

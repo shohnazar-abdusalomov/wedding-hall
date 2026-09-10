@@ -4,25 +4,16 @@ const cors = require('cors');
 const path = require('path');
 const multer = require('multer');
 const fs = require('fs');
-const Datastore = require('nedb-promises');
+const db = require('./db');
 
 const app = express();
 const PORT = 5000;
 
-// Ensure directories
-['data', 'uploads'].forEach(d => {
+// Ensure upload directory exists
+['uploads'].forEach(d => {
   const dir = path.join(__dirname, d);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
-
-// Databases
-const db = {
-  users: Datastore.create({ filename: path.join(__dirname, 'data/users.db'), autoload: true }),
-  owners: Datastore.create({ filename: path.join(__dirname, 'data/owners.db'), autoload: true }),
-  venues: Datastore.create({ filename: path.join(__dirname, 'data/venues.db'), autoload: true }),
-  bookings: Datastore.create({ filename: path.join(__dirname, 'data/bookings.db'), autoload: true }),
-  otps: Datastore.create({ filename: path.join(__dirname, 'data/otps.db'), autoload: true }),
-};
 
 // File upload config
 const storage = multer.diskStorage({
@@ -50,24 +41,31 @@ app.use('/api/bookings', require('./routes/bookings'));
 app.use('/api/owners', require('./routes/owners'));
 app.use('/api/admin', require('./routes/admin'));
 
-// Seed default admin
+// Initialize the database, seed a default admin, then start listening.
 const bcrypt = require('bcryptjs');
 (async () => {
-  const existing = await db.users.findOne({ role: 'admin' });
-  if (!existing) {
-    const hash = await bcrypt.hash('admin123', 10);
-    await db.users.insert({
-      firstName: 'Admin',
-      lastName: 'Adminov',
-      username: 'admin',
-      password: hash,
-      role: 'admin',
-      createdAt: new Date().toISOString(),
+  try {
+    await db.init();
+
+    const existing = await db.users.findOne({ role: 'admin' });
+    if (!existing) {
+      const hash = await bcrypt.hash('admin123', 10);
+      await db.users.insert({
+        firstName: 'Admin',
+        lastName: 'Adminov',
+        username: 'admin',
+        password: hash,
+        role: 'admin',
+        createdAt: new Date().toISOString(),
+      });
+      console.log('Default admin created: admin / admin123');
+    }
+
+    app.listen(PORT, () => {
+      console.log(`Server running on http://localhost:${PORT}`);
     });
-    console.log('Default admin created: admin / admin123');
+  } catch (err) {
+    console.error('Database initialization failed:', err.message);
+    process.exit(1);
   }
 })();
-
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});

@@ -1,20 +1,10 @@
-const Datastore = require('nedb-promises');
+require('dotenv').config();
 const bcrypt = require('bcryptjs');
-const path = require('path');
-const fs = require('fs');
-
-const dataDir = path.join(__dirname, 'data');
-if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
-
-const db = {
-  users: Datastore.create({ filename: path.join(dataDir, 'users.db'), autoload: true }),
-  owners: Datastore.create({ filename: path.join(dataDir, 'owners.db'), autoload: true }),
-  venues: Datastore.create({ filename: path.join(dataDir, 'venues.db'), autoload: true }),
-  bookings: Datastore.create({ filename: path.join(dataDir, 'bookings.db'), autoload: true }),
-  otps: Datastore.create({ filename: path.join(dataDir, 'otps.db'), autoload: true }),
-};
+const db = require('./db');
 
 async function seed() {
+  await db.init();
+
   // Clear existing data
   await db.users.remove({}, { multi: true });
   await db.owners.remove({}, { multi: true });
@@ -59,6 +49,7 @@ async function seed() {
   const venues = [
     {
       name: 'Navruz Saroyi', district: 'Yunusobod', address: 'Amir Temur ko\'chasi 45',
+      lat: 41.3640, lng: 69.2890,
       capacity: 500, pricePerSeat: 120000, phone: '+998712345678',
       photos: ['/uploads/navruz-1.jpg', '/uploads/hall-5.jpg', '/uploads/hall-1.jpg', '/uploads/hall-4.jpg'],
       services: {
@@ -78,6 +69,7 @@ async function seed() {
     },
     {
       name: 'Milliy Uslub', district: 'Chilonzor', address: 'Bunyodkor shoh ko\'chasi 12',
+      lat: 41.2750, lng: 69.2030,
       capacity: 350, pricePerSeat: 95000, phone: '+998712345679',
       photos: ['/uploads/milliy-1.jpg', '/uploads/milliy-4.jpg', '/uploads/hall-3.jpg', '/uploads/hall-7.jpg'],
       services: {
@@ -95,6 +87,7 @@ async function seed() {
     },
     {
       name: 'Samarkand Palace', district: 'Mirobod', address: 'Mustaqillik maydoni 7',
+      lat: 41.3110, lng: 69.2800,
       capacity: 800, pricePerSeat: 150000, phone: '+998712345680',
       photos: ['/uploads/hall-5.jpg', '/uploads/navruz-3.jpg', '/uploads/hall-1.jpg', '/uploads/hall-6.jpg'],
       services: {
@@ -116,6 +109,7 @@ async function seed() {
     },
     {
       name: 'Oq Saroy', district: 'Yakkasaroy', address: 'Shota Rustaveli ko\'chasi 33',
+      lat: 41.2870, lng: 69.2510,
       capacity: 250, pricePerSeat: 85000, phone: '+998712345681',
       photos: ['/uploads/navruz-2.jpg', '/uploads/hall-7.jpg', '/uploads/hall-3.jpg'],
       services: {
@@ -131,6 +125,7 @@ async function seed() {
     },
     {
       name: 'Grand Bukhara', district: 'Shayxontohur', address: 'Navoiy ko\'chasi 100',
+      lat: 41.3250, lng: 69.2360,
       capacity: 600, pricePerSeat: 130000, phone: '+998712345682',
       photos: ['/uploads/navruz-4.jpg', '/uploads/hall-2.jpg', '/uploads/hall-8.jpg', '/uploads/hall-6.jpg'],
       services: {
@@ -150,6 +145,7 @@ async function seed() {
     },
     {
       name: 'Yangi To\'yxona', district: 'Sergeli', address: 'Sergeli ko\'chasi 55',
+      lat: 41.2280, lng: 69.2200,
       capacity: 200, pricePerSeat: 75000, phone: '+998712345683',
       photos: ['/uploads/hall-2.jpg', '/uploads/hall-1.jpg'],
       services: {
@@ -210,4 +206,6 @@ async function seed() {
   console.log('User: +998901234567 / user123');
 }
 
-seed().catch(console.error);
+seed()
+  .catch(console.error)
+  .finally(() => db.pool.end());

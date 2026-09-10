@@ -533,6 +533,16 @@ body {
   border: 6px solid transparent;
   border-top-color: var(--surface);
 }
+.booking-popup-row {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+  line-height: 1.6;
+}
+.booking-popup-label {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
 
 /* CHIP TAGS */
 .chip-list { display: flex; flex-wrap: wrap; gap: 0.4rem; }
@@ -609,3 +619,197 @@ body {
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+/* ============ MAPS ============ */
+
+/* Segmented list/map view toggle */
+.view-toggle {
+  display: inline-flex;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 3px;
+  gap: 2px;
+  margin-left: auto;
+}
+.view-toggle button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.82rem;
+  padding: 0.4rem 0.95rem;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.view-toggle button:hover { color: var(--text); }
+.view-toggle button.active {
+  background: var(--surface);
+  color: var(--primary);
+  box-shadow: var(--shadow);
+}
+.view-toggle button svg { width: 15px; height: 15px; }
+
+/* Map container card */
+.map-shell {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  background: var(--surface-alt);
+}
+.map-shell .leaflet-container {
+  width: 100%;
+  font-family: var(--font);
+  background: var(--surface-alt);
+}
+.map-count-pill {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 500;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.4rem 0.85rem;
+  border-radius: 99px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-light);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.map-count-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); }
+
+/* Map picker hint + coordinate badge */
+.map-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.45rem;
+}
+.map-coord-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--primary);
+  background: var(--primary-light);
+  padding: 0.35rem 0.7rem;
+  border-radius: 99px;
+}
+.map-search-row { display: flex; gap: 0.45rem; margin-bottom: 0.5rem; }
+
+/* Leaflet popup styled to match the app */
+.leaflet-popup-content-wrapper {
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-md) !important;
+  border: 1px solid var(--border-light);
+  padding: 2px;
+}
+.leaflet-popup-content { margin: 0.7rem 0.85rem !important; }
+.leaflet-popup-tip { box-shadow: var(--shadow) !important; }
+.venue-popup { min-width: 178px; }
+.venue-popup .vp-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+.venue-popup .vp-meta { font-size: 0.76rem; color: var(--text-muted); line-height: 1.4; }
+.venue-popup .vp-price { font-size: 0.82rem; color: var(--primary); font-weight: 700; margin: 5px 0 7px; }
+.venue-popup .vp-btn {
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 0.45rem 0.75rem;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--primary);
+  color: #fff !important;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: var(--font);
+  transition: var(--transition);
+}
+.venue-popup .vp-btn:hover { background: var(--primary-hover); }
+
+/* "Yo'l ko'rsatish" — gradient navigation button with rich hover motion */
+.map-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 0.8rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: #fff;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  background-size: 160% 160%;
+  background-position: 0% 50%;
+  padding: 0.72rem 1.4rem;
+  border: none;
+  border-radius: 99px;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(13, 148, 136, 0.28);
+  transition: transform 0.22s cubic-bezier(.34,1.56,.64,1), box-shadow 0.22s ease, background-position 0.5s ease;
+}
+.map-link-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 26px rgba(13, 148, 136, 0.42);
+  background-position: 100% 50%;
+}
+.map-link-btn:active { transform: translateY(-1px) scale(0.98); box-shadow: 0 4px 12px rgba(13, 148, 136, 0.35); }
+.map-link-btn:disabled { cursor: progress; opacity: 0.85; transform: none; box-shadow: 0 4px 14px rgba(13, 148, 136, 0.2); }
+.map-link-btn .compass { display: inline-block; font-size: 1.05rem; transform-origin: 50% 55%; }
+.map-link-btn:hover .compass { animation: compass-spin 0.9s cubic-bezier(.36,.07,.19,.97) both; }
+.map-link-btn:disabled .compass { animation: compass-loop 1.1s linear infinite; }
+.map-link-btn .route-arrow { transition: transform 0.22s ease; }
+.map-link-btn:hover .route-arrow { transform: translateX(4px); }
+
+@keyframes compass-spin {
+  0% { transform: rotate(0); }
+  60% { transform: rotate(-28deg); }
+  100% { transform: rotate(0); }
+}
+@keyframes compass-loop { to { transform: rotate(360deg); } }
+
+/* Count pill dot — gentle radar pulse */
+.map-count-pill .dot { animation: dot-pulse 1.8s ease-out infinite; }
+@keyframes dot-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.5); }
+  70% { box-shadow: 0 0 0 7px rgba(13, 148, 136, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(13, 148, 136, 0); }
+}
+
+/* View toggle — springy active state */
+.view-toggle button { transition: color var(--transition), background var(--transition), transform 0.18s cubic-bezier(.34,1.56,.64,1); }
+.view-toggle button:active { transform: scale(0.94); }
+.view-toggle button.active { transform: translateZ(0); }
+.view-toggle button svg { transition: transform 0.2s ease; }
+.view-toggle button:hover svg { transform: scale(1.12); }
+
+/* Map shell hover lift */
+.map-shell { transition: box-shadow 0.25s ease; }
+.map-shell:hover { box-shadow: var(--shadow-md); }
+
+@media (prefers-reduced-motion: reduce) {
+  .map-link-btn, .map-link-btn .compass, .map-count-pill .dot,
+  .view-toggle button, .map-link-btn .route-arrow { animation: none !important; transition: none !important; }
+}
+
+@media (max-width: 600px) {
+  .view-toggle { margin-left: 0; width: 100%; justify-content: center; }
+}

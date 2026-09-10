@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import Calendar from '../components/Calendar';
 import Modal from '../components/Modal';
 import OtpForm from '../components/OtpForm';
+import LocationMap from '../components/LocationMap';
 
 function formatPrice(n) { return n ? n.toLocaleString('uz-UZ') : '0'; }
 
@@ -22,6 +23,8 @@ export default function VenueDetail() {
   const [showBookingInfo, setShowBookingInfo] = useState(null);
   const [booking, setBooking] = useState(false);
   const [mainPhoto, setMainPhoto] = useState(0);
+  const [userLoc, setUserLoc] = useState(null); // foydalanuvchi joylashuvi (cache)
+  const [locating, setLocating] = useState(false);
 
   // Login form state
   const [loginMode, setLoginMode] = useState('login'); // login or register
@@ -30,6 +33,22 @@ export default function VenueDetail() {
   const [otpStep, setOtpStep] = useState(null); // { target, email, devCode }
 
   useEffect(() => { loadVenue(); }, [id]);
+
+  // Ruxsat allaqachon berilgan bo'lsa, joylashuvni jim oldindan olib qo'yamiz —
+  // shunda "Yo'l ko'rsatish" bosilganda marshrut darhol ochiladi.
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    const prefetch = () => navigator.geolocation.getCurrentPosition(
+      pos => setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => {},
+      { enableHighAccuracy: false, timeout: 5000, maximumAge: 300000 }
+    );
+    if (navigator.permissions?.query) {
+      navigator.permissions.query({ name: 'geolocation' })
+        .then(res => { if (res.state === 'granted') prefetch(); })
+        .catch(() => {});
+    }
+  }, []);
 
   async function loadVenue() {
     try {
@@ -142,6 +161,69 @@ export default function VenueDetail() {
     closeLogin();
   }
 
+  // Foydalanuvchi turgan joydan to'yxonagacha Yandex Navigator orqali marshrut quradi.
+  // Mobil: Yandex Navigator ilovasi (qurilma GPS'idan), kompyuter: Yandex Xaritalar web marshruti.
+  function openYandexRoute() {
+    if (venue?.lat == null || venue?.lng == null) return;
+    const { lat, lng } = venue;
+    const webUrl = (from) =>
+      `https://yandex.uz/maps/?rtext=${from || ''}~${lat},${lng}&rtype=auto&mode=routes`;
+
+    const isMobile = /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+
+    if (isMobile) {
+      // Navigator joriy lokatsiyani o'zi aniqlaydi — faqat manzilni beramiz.
+      const navUrl = `yandexnavi://build_route_on_map?lat_to=${lat}&lon_to=${lng}`;
+      let appOpened = false;
+      const onHide = () => { appOpened = true; };
+      document.addEventListener('visibilitychange', onHide, { once: true });
+      // Ilova ochilmasa (o'rnatilmagan bo'lsa) — web xaritaga qaytamiz.
+      setTimeout(() => {
+        document.removeEventListener('visibilitychange', onHide);
+        if (!appOpened && !document.hidden) window.location.href = webUrl('');
+      }, 1200);
+      window.location.href = navUrl;
+      return;
+    }
+
+    // Lokatsiya allaqachon olingan bo'lsa — kutmasdan darhol ochamiz.
+    if (userLoc) {
+      window.open(webUrl(`${userLoc.lat},${userLoc.lng}`), '_blank', 'noopener');
+      return;
+    }
+
+    // Popup-bloker uchun oynani sinxron ochamiz va "yuklanmoqda" ko'rsatamiz.
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write('<title>Yandex marshruti</title><p style="font-family:system-ui,sans-serif;padding:28px;color:#0D9488;font-size:16px">🧭 Marshrut tayyorlanmoqda…</p>');
+    }
+    const finish = (from) => {
+      const url = webUrl(from);
+      if (win) win.location.href = url;
+      else window.open(url, '_blank', 'noopener');
+    };
+    if (navigator.geolocation) {
+      setLocating(true);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const me = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          setUserLoc(me);
+          setLocating(false);
+          finish(`${me.lat},${me.lng}`);
+        },
+        () => {
+          // Ruxsat berilmasa / xato — Yandex boshlang'ich nuqtani o'zi so'raydi.
+          setLocating(false);
+          toast('Joylashuvni aniqlab bo\'lmadi — Yandexda boshlang\'ich nuqtani belgilang', 'info');
+          finish('');
+        },
+        { enableHighAccuracy: false, timeout: 5000, maximumAge: 300000 }
+      );
+    } else {
+      finish('');
+    }
+  }
+
   function closeLogin() {
     setShowLogin(false);
     setLoginError('');
@@ -190,6 +272,19 @@ export default function VenueDetail() {
               <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{formatPrice(venue.pricePerSeat)} so'm / kishi</span>
               <span>{venue.capacity} o'rindiq</span>
             </div>
+
+            {/* Joylashuvi (xarita) */}
+            {venue.lat != null && venue.lng != null && (
+              <div className="venue-section">
+                <h3>📍 Joylashuvi</h3>
+                <LocationMap value={{ lat: venue.lat, lng: venue.lng }} readOnly height={280} />
+                <button type="button" className="map-link-btn" onClick={openYandexRoute} disabled={locating}>
+                  <span className="compass">🧭</span>
+                  <span>{locating ? 'Joylashuv aniqlanmoqda…' : 'Yo\'l ko\'rsatish'}</span>
+                  {!locating && <span className="route-arrow">→</span>}
+                </button>
+              </div>
+            )}
 
             {/* Services */}
             {venue.services && (
@@ -269,6 +364,7 @@ export default function VenueDetail() {
               selectedDate={selectedDate}
               onSelectDate={setSelectedDate}
               onClickBooked={b => setShowBookingInfo(b)}
+              isOwner={user?.role === 'owner'}
             />
           </div>
 

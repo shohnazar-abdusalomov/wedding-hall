@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useRef } from 'react';
+import { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 
 const AuthContext = createContext(null);
 
@@ -26,6 +26,18 @@ export function AuthProvider({ children }) {
     setToasts(prev => [...prev, { id, message, type }]);
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3500);
   }, []);
+
+  // When a request fails auth (expired/invalid token), api.js clears storage and
+  // fires this event — reset the UI to logged-out so the user re-authenticates
+  // instead of getting stuck with token-less requests ("Token topilmadi").
+  useEffect(() => {
+    function onExpired() {
+      setUser(null);
+      toast('Sessiya tugadi. Iltimos, qaytadan kiring.', 'error');
+    }
+    window.addEventListener('auth:expired', onExpired);
+    return () => window.removeEventListener('auth:expired', onExpired);
+  }, [toast]);
 
   return (
     <AuthContext.Provider value={{ user, login, logout, toast, toasts }}>

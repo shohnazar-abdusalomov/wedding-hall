@@ -5,6 +5,8 @@ import { useAuth } from '../context/AuthContext';
 import Modal from '../components/Modal';
 import Calendar from '../components/Calendar';
 import PhotoUpload from '../components/PhotoUpload';
+import LocationMap from '../components/LocationMap';
+import { geocode, districtCenter } from '../utils/leaflet';
 
 const DISTRICTS = [
   'Bektemir', 'Chilonzor', 'Yakkasaroy', 'Mirobod',
@@ -47,10 +49,26 @@ export default function OwnerDashboard() {
     e.preventDefault();
     setLoading(true);
     try {
+      // Egasi xaritada nuqta belgilamagan bo'lsa — manzildan koordinatani
+      // avtomatik aniqlaymiz, shunda to'yxona sahifasida "📍 Joylashuvi"
+      // bo'limi doim ko'rinadi.
+      let { lat, lng } = form;
+      if (lat == null || lng == null) {
+        // Egasi xaritada nuqta belgilamagan bo'lsa: avval rayon nomidan
+        // geokodlashga urinamiz, ishlamasa — rayon markazini ishlatamiz.
+        // Shunday qilib lat/lng hech qachon bo'sh qolmaydi va to'yxona
+        // sahifasida "📍 Joylashuvi" doim ko'rinadi.
+        const geo = await geocode(`${form.district || ''}, Toshkent, Uzbekistan`);
+        const fallback = geo || districtCenter(form.district);
+        lat = fallback.lat;
+        lng = fallback.lng;
+      }
       const data = {
         ...form,
         capacity: parseInt(form.capacity),
         pricePerSeat: parseInt(form.pricePerSeat),
+        lat,
+        lng,
         singers: JSON.stringify(form.singers || []),
         karnaySurnayAvailable: form.karnaySurnayAvailable || false,
         karnaySurnayPrice: form.karnaySurnayPrice || 0,
@@ -91,6 +109,7 @@ export default function OwnerDashboard() {
     setEditingVenue(v);
     setForm({
       name: v.name, district: v.district, address: v.address,
+      lat: v.lat ?? null, lng: v.lng ?? null,
       capacity: v.capacity, pricePerSeat: v.pricePerSeat, phone: v.phone,
       photos: v.photos || [], singers: v.services?.singers || [],
       karnaySurnayAvailable: v.services?.karnaySurnay?.available || false,
@@ -191,7 +210,13 @@ export default function OwnerDashboard() {
               </select>
             </div>
           </div>
-          <div className="form-group"><label className="form-label">Manzil</label><input className="form-input" required value={form.address || ''} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} /></div>
+          <div className="form-group">
+            <label className="form-label">Xaritada joylashuvi</label>
+            <LocationMap
+              value={form.lat != null && form.lng != null ? { lat: form.lat, lng: form.lng } : null}
+              onChange={({ lat, lng }) => setForm(p => ({ ...p, lat, lng }))}
+            />
+          </div>
           <div className="form-row">
             <div className="form-group"><label className="form-label">Sig'im</label><input className="form-input" type="number" required value={form.capacity || ''} onChange={e => setForm(p => ({ ...p, capacity: e.target.value }))} /></div>
             <div className="form-group"><label className="form-label">Narx (so'm/kishi)</label><input className="form-input" type="number" required value={form.pricePerSeat || ''} onChange={e => setForm(p => ({ ...p, pricePerSeat: e.target.value }))} /></div>

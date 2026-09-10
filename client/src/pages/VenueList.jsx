@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api';
+import VenuesMap from '../components/VenuesMap';
 
 const DISTRICTS = [
   'Bektemir', 'Chilonzor', 'Yakkasaroy', 'Mirobod',
@@ -20,6 +21,7 @@ export default function VenueList() {
   const [district, setDistrict] = useState('');
   const [sortBy, setSortBy] = useState('');
   const [order, setOrder] = useState('asc');
+  const [view, setView] = useState('list'); // 'list' yoki 'map'
 
   useEffect(() => {
     load();
@@ -112,9 +114,22 @@ export default function VenueList() {
             Tozalash
           </button>
         )}
+
+        <div className="view-toggle">
+          <button className={view === 'list' ? 'active' : ''} onClick={() => setView('list')}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            Ro'yxat
+          </button>
+          <button className={view === 'map' ? 'active' : ''} onClick={() => setView('map')}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+            Xarita
+          </button>
+        </div>
       </div>
 
-      {loading ? (
+      {view === 'map' ? (
+        <VenuesMap venues={venues} />
+      ) : loading ? (
         <div className="venue-grid">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="venue-card skeleton-card">

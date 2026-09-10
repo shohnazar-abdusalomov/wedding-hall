@@ -5,6 +5,8 @@ import { useAuth } from '../context/AuthContext';
 import Modal from '../components/Modal';
 import Calendar from '../components/Calendar';
 import PhotoUpload from '../components/PhotoUpload';
+import LocationMap from '../components/LocationMap';
+import { geocode, districtCenter } from '../utils/leaflet';
 
 const DISTRICTS = [
   'Bektemir', 'Chilonzor', 'Yakkasaroy', 'Mirobod',
@@ -71,10 +73,22 @@ export default function AdminDashboard() {
     e.preventDefault();
     setLoading(true);
     try {
+      // Xaritada nuqta belgilanmagan bo'lsa: avval rayon nomidan geokodlashga
+      // urinamiz, ishlamasa — rayon markazini ishlatamiz. Shunday qilib lat/lng
+      // hech qachon bo'sh qolmaydi va sahifada "📍 Joylashuvi" doim ko'rinadi.
+      let { lat, lng } = venueForm;
+      if (lat == null || lng == null) {
+        const geo = await geocode(`${venueForm.district || ''}, Toshkent, Uzbekistan`);
+        const fallback = geo || districtCenter(venueForm.district);
+        lat = fallback.lat;
+        lng = fallback.lng;
+      }
       const data = {
         ...venueForm,
         capacity: parseInt(venueForm.capacity),
         pricePerSeat: parseInt(venueForm.pricePerSeat),
+        lat,
+        lng,
         singers: JSON.stringify(venueForm.singers || []),
         karnaySurnayAvailable: venueForm.karnaySurnayAvailable || false,
         karnaySurnayPrice: venueForm.karnaySurnayPrice || 0,
@@ -160,6 +174,7 @@ export default function AdminDashboard() {
     setEditingVenue(v);
     setVenueForm({
       name: v.name, district: v.district, address: v.address,
+      lat: v.lat ?? null, lng: v.lng ?? null,
       capacity: v.capacity, pricePerSeat: v.pricePerSeat, phone: v.phone,
       photos: v.photos || [],
       singers: v.services?.singers || [],
@@ -365,7 +380,13 @@ export default function AdminDashboard() {
               </select>
             </div>
           </div>
-          <div className="form-group"><label className="form-label">Manzil</label><input className="form-input" required value={venueForm.address || ''} onChange={e => setVenueForm(p => ({ ...p, address: e.target.value }))} /></div>
+          <div className="form-group">
+            <label className="form-label">Xaritada joylashuvi</label>
+            <LocationMap
+              value={venueForm.lat != null && venueForm.lng != null ? { lat: venueForm.lat, lng: venueForm.lng } : null}
+              onChange={({ lat, lng }) => setVenueForm(p => ({ ...p, lat, lng }))}
+            />
+          </div>
           <div className="form-row">
             <div className="form-group"><label className="form-label">Sig'im (o'rindiq)</label><input className="form-input" type="number" required value={venueForm.capacity || ''} onChange={e => setVenueForm(p => ({ ...p, capacity: e.target.value }))} /></div>
             <div className="form-group"><label className="form-label">Narx (1 o'rindiq, so'm)</label><input className="form-input" type="number" required value={venueForm.pricePerSeat || ''} onChange={e => setVenueForm(p => ({ ...p, pricePerSeat: e.target.value }))} /></div>

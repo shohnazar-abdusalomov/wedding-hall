@@ -13,7 +13,17 @@ function toISO(d) {
   return `${y}-${m}-${day}`;
 }
 
-export default function Calendar({ bookings = [], onSelectDate, selectedDate, onClickBooked }) {
+function fmtPrice(n) {
+  return n ? n.toLocaleString('uz-UZ') + ' so\'m' : '';
+}
+
+function fmtDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+export default function Calendar({ bookings = [], onSelectDate, selectedDate, onClickBooked, isOwner = false }) {
   const [viewDate, setViewDate] = useState(() => new Date());
   const [hoveredBooking, setHoveredBooking] = useState(null);
 
@@ -83,15 +93,29 @@ export default function Calendar({ bookings = [], onSelectDate, selectedDate, on
               key={iso}
               className={cls}
               onClick={handleClick}
-              onMouseEnter={() => isBooked && setHoveredBooking(iso)}
+              onMouseEnter={() => isBooked && isOwner && setHoveredBooking(iso)}
               onMouseLeave={() => setHoveredBooking(null)}
               style={{ position: 'relative' }}
             >
               {d}
-              {hoveredBooking === iso && bookedMap[iso] && (
+              {hoveredBooking === iso && isOwner && bookedMap[iso] && (
                 <div className="booking-popup">
-                  <strong>{bookedMap[iso].userFirstName} {bookedMap[iso].userLastName}</strong><br />
-                  {bookedMap[iso].guestCount} kishi
+                  <div className="booking-popup-row">
+                    <span className="booking-popup-label">Bron qilgan:</span>
+                    <span>{bookedMap[iso].userFirstName} {bookedMap[iso].userLastName}</span>
+                  </div>
+                  <div className="booking-popup-row">
+                    <span className="booking-popup-label">Bron sanasi:</span>
+                    <span>{fmtDate(bookedMap[iso].createdAt)}</span>
+                  </div>
+                  <div className="booking-popup-row">
+                    <span className="booking-popup-label">Narxi:</span>
+                    <span>{fmtPrice(bookedMap[iso].totalPrice)}</span>
+                  </div>
+                  <div className="booking-popup-row">
+                    <span className="booking-popup-label">Mehmonlar:</span>
+                    <span>{bookedMap[iso].guestCount} kishi</span>
+                  </div>
                 </div>
               )}
             </div>
