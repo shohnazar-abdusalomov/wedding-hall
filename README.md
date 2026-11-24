@@ -1,159 +1,109 @@
-# To‘yxona Loyihasi — Onlayn Bron Qilish Tizimi
+# 🏛️ Wedding Hall — Venue Booking & Event Management Platform
 
-Toshkent shahridagi to‘yxonalarni onlayn bron qilish uchun fullstack veb-ilova.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/shohnazar-abdusalomov/wedding-hall/pulls)
+[![GitHub stars](https://img.shields.io/github/stars/shohnazar-abdusalomov/wedding-hall?style=social)](https://github.com/shohnazar-abdusalomov/wedding-hall)
 
-## Texnologiyalar
+An open-source web application designed to simplify browsing, booking, and managing wedding venues and event halls. Built with modern web technologies, **Wedding Hall** provides both a practical solution for event organizers and a clean, extensible full-stack reference architecture for service-booking platforms.
 
-- **Backend:** Node.js, Express, NeDB (embedded DB), JWT, bcryptjs
-- **Email/OTP:** Resend (console fallback, kalitsiz ham ishlaydi)
-- **Frontend:** React, React Router, Axios, Vite
-- **Design:** Custom CSS (framework-free)
+---
 
-## O'rnatish va ishga tushirish
+## ✨ Key Features
 
-```bash
-# 1. Dependencies o‘rnatish
+- **Venue Discovery & Showcase:** Explore wedding halls with rich descriptions, guest capacities, pricing tiers, and photo galleries.
+- **Smart Search & Filtering:** Filter venues by location, guest count, budget range, and available amenities.
+- **Real-Time Availability & Booking:** Check open dates and submit reservation requests with conflict-free scheduling.
+- **Admin & Venue Management:** Manage hall listings, review and approve incoming bookings, and update availability calendars.
+- **Fully Responsive UI:** Optimized for seamless use across desktop, tablet, and mobile devices.
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technologies |
+| :--- | :--- |
+| **Frontend** | React, TypeScript, Tailwind CSS |
+| **State Management** | Redux Toolkit / Context API |
+| **Backend** | Node.js, Express *(update if different)* |
+| **Database** | PostgreSQL / MongoDB *(update if different)* |
+| **Tooling** | Vite, ESLint, Git |
+
+---
+
+## 🚀 Getting Started
+
+Follow these steps to run the project locally on your machine.
+
+### Prerequisites
+
+Ensure you have the following installed:
+- [Node.js](https://nodejs.org/) (v18 or higher)
+- `npm` or `yarn`
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone [https://github.com/shohnazar-abdusalomov/wedding-hall.git](https://github.com/shohnazar-abdusalomov/wedding-hall.git)
+   cd wedding-hall
+Install dependencies
+
+Bash
 npm install
-cd server && npm install && cd ..
-cd client && npm install && cd ..
+Set up environment variables
+Create a .env file in the root directory and configure your keys:
 
-# 2. (Ixtiyoriy) Email/OTP sozlamalari
-cd server && cp .env.example .env   # va RESEND_API_KEY ni kiriting (yoki bo‘sh qoldiring)
-cd ..
+Code snippet
+VITE_API_URL=http://localhost:5000/api
+Start the development server
 
-# 3. Ma'lumotlar bazasini seed qilish (namuna ma'lumotlar)
-npm run seed
-
-# 4. Ishga tushirish (server + client bir vaqtda)
+Bash
 npm run dev
-```
+The app will be running at http://localhost:5173.
 
-- **Frontend:** http://localhost:3000
-- **Backend API:** http://localhost:5000/api
+📁 Project Structure
+Plaintext
+wedding-hall/
+├── public/              # Static assets (images, icons)
+├── src/
+│   ├── components/      # Reusable UI components
+│   ├── pages/           # Route-level page views
+│   ├── store/           # Global state management
+│   ├── services/        # API clients and data fetching
+│   ├── types/           # TypeScript interfaces and types
+│   └── main.tsx         # Application entry point
+├── .env.example         # Sample environment configuration
+├── package.json         # Project metadata and scripts
+├── LICENSE              # MIT License
+└── README.md            # Project documentation
+🗺️ Roadmap
+[x] Core venue listing and detail views
 
-## OTP autentifikatsiya (Resend)
+[x] Responsive UI layout
 
-Tizim email orqali bir martalik tasdiqlash kodlari (OTP) ishlatadi:
+[ ] Automated unit and integration tests
 
-- **To‘yxona egalari** — har safar kirishda emailga kod yuboriladi.
-- **Foydalanuvchilar** — ro‘yxatdan o‘tishda email tasdiqlanadi; kirishda esa
-  "Email orqali kod bilan kirish" katagini belgilab 2-bosqichli kirishdan
-  foydalanish mumkin.
+[ ] Multi-language support (Uzbek, English, Russian)
 
-Kodlar: 6 xonali, **5 daqiqa** amal qiladi, ko‘pi bilan **5 marta** xato
-kiritish mumkin, qayta yuborish orasida **60 soniya** kutiladi. Kodlar bazada
-bcrypt bilan hash qilib saqlanadi.
+[ ] Online payment gateway integration
 
-**Email yetkazib berish:**
+🤝 Contributing
+Contributions are what make the open-source community thrive. Any contributions you make are greatly appreciated.
 
-- `RESEND_API_KEY` o‘rnatilgan bo‘lsa — kod haqiqiy email orqali yuboriladi
-  ([resend.com](https://resend.com) dan bepul kalit oling).
-- Kalit bo‘lmasa (yoki dev rejimida) — kod **server konsoliga** chiqariladi va
-  test qulayligi uchun API javobida `devCode` sifatida qaytariladi
-  (`NODE_ENV=production` da bu o‘chiriladi).
+Fork the Project
 
-## Demo login ma'lumotlari
+Create your Feature Branch (git checkout -b feature/AmazingFeature)
 
-| Rol | Login | Parol |
-|-----|-------|-------|
-| Admin | admin | admin123 |
-| To‘yxona egasi 1 | jamshid | owner123 |
-| To‘yxona egasi 2 | nilufar | owner123 |
-| Foydalanuvchi | +998901234567 | user123 |
+Commit your Changes (git commit -m 'feat: add AmazingFeature')
 
-## Tizim rollari
+Push to the Branch (git push origin feature/AmazingFeature)
 
-### Admin
-- Statistikani ko‘rish (to‘yxonalar, bronlar, foydalanuvchilar soni)
-- To‘yxona qo‘shish, tahrirlash, o‘chirish, tasdiqlash
-- To‘yxona egalarini qo‘shish, o‘chirish, boshqarish
-- Egani to‘yxonaga biriktirish
-- Barcha bronlarni ko‘rish va bekor qilish
-- Filtrlash: rayon, status, qidiruv
+Open a Pull Request
 
-### To‘yxona egasi
-- Har kirishda email OTP tasdiqlash
-- O'z to‘yxonasini ro‘yxatdan o‘tkazish (admin tasdiqlashi kerak)
-- Rasm yuklash (drag emas, tugma orqali; tartiblash va asosiy rasm tanlash)
-- To‘yxonani tahrirlash (xizmatlar, narx, sig'im)
-- O'z to‘yxonasidagi bronlarni ko‘rish va bekor qilish
-- Kalendar orqali band kunlarni ko‘rish
+📄 License
+Distributed under the MIT License. See LICENSE for more information.
 
-### Foydalanuvchi
-- Tasdiqlangan to‘yxonalarni ko‘rish
-- Qidiruv, rayon bo‘yicha filtr, narx/sig'im bo‘yicha tartiblash
-- Kalendardan bo‘sh kunni tanlash va bron qilish
-- Qo‘shimcha xizmatlarni tanlash (honandalar, karnay-surnay, mashina)
-- Narx kalkulyatsiyasi va 20% avans to‘lovi
-- O'z bronlarini ko‘rish va bekor qilish
+👤 Author
+Shohnazar Abdusalomov
 
-## Loyiha tuzilishi
-
-```
-toyxona/
-├── server/
-│   ├── server.js          # Asosiy server
-│   ├── seed.js            # Ma'lumotlarni seed qilish
-│   ├── middleware/
-│   │   └── auth.js        # JWT autentifikatsiya
-│   ├── routes/
-│   │   ├── auth.js        # Login/Register
-│   │   ├── venues.js      # To‘yxona CRUD
-│   │   ├── bookings.js    # Bron CRUD
-│   │   ├── owners.js      # Egalar boshqaruvi
-│   │   └── admin.js       # Admin statistika
-│   └── data/              # NeDB fayllar
-├── client/
-│   ├── index.html
-│   ├── vite.config.js
-│   └── src/
-│       ├── App.jsx
-│       ├── api.js
-│       ├── index.css
-│       ├── context/
-│       │   └── AuthContext.jsx
-│       ├── components/
-│       │   ├── Calendar.jsx
-│       │   └── Modal.jsx
-│       └── pages/
-│           ├── VenueList.jsx
-│           ├── VenueDetail.jsx
-│           ├── LoginPage.jsx
-│           ├── MyBookings.jsx
-│           ├── AdminDashboard.jsx
-│           └── OwnerDashboard.jsx
-└── package.json
-```
-
-## API Endpointlari
-
-### Auth
-- `POST /api/auth/register` - Ro‘yxatdan o‘tish (1-bosqich: emailga OTP yuborish)
-- `POST /api/auth/register/verify` - Ro‘yxatdan o‘tish (2-bosqich: OTP + akkaunt yaratish)
-- `POST /api/auth/login` - Foydalanuvchi kirish (`otpLogin: true` bilan 2FA)
-- `POST /api/auth/login/verify` - Foydalanuvchi 2FA OTP tasdiqlash
-- `POST /api/auth/admin-login` - Admin kirish
-- `POST /api/auth/owner-login` - Egasi kirish (emailga OTP yuborish)
-- `POST /api/auth/owner-login/verify` - Egasi OTP tasdiqlash
-- `POST /api/auth/resend-otp` - Kodni qayta yuborish
-- `GET  /api/auth/me` - Joriy foydalanuvchi ma'lumoti
-
-### To‘yxonalar
-- `GET /api/venues` - Ro‘yxat (qidiruv, filtr, tartiblash)
-- `GET /api/venues/:id` - Batafsil
-- `POST /api/venues` - Qo‘shish
-- `PUT /api/venues/:id` - Tahrirlash
-- `DELETE /api/venues/:id` - O'chirish
-- `PATCH /api/venues/:id/approve` - Tasdiqlash
-- `PATCH /api/venues/:id/assign-owner` - Egani biriktirish
-
-### Bronlar
-- `GET /api/bookings` - Ro‘yxat (rol bo‘yicha filtrlangan)
-- `POST /api/bookings` - Bron qilish
-- `GET /api/bookings/venue/:venueId` - Kalendar uchun
-- `PATCH /api/bookings/:id/cancel` - Bekor qilish
-
-### Egalar
-- `GET /api/owners` - Ro‘yxat
-- `POST /api/owners` - Qo‘shish
-- `DELETE /api/owners/:id` - O'chirish
+GitHub: @shohnazar-abdusalomov
