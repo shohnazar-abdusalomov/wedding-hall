@@ -24,8 +24,8 @@ An open-source web application designed to simplify browsing, booking, and manag
 | :--- | :--- |
 | **Frontend** | React, TypeScript, Tailwind CSS |
 | **State Management** | Redux Toolkit / Context API |
-| **Backend** | Node.js, Express *(update if different)* |
-| **Database** | PostgreSQL / MongoDB *(update if different)* |
+| **Backend** | Node.js, Express |
+| **Database** | PostgreSQL / MongoDB |
 | **Tooling** | Vite, ESLint, Git |
 
 ---
@@ -46,23 +46,31 @@ Ensure you have the following installed:
    ```bash
    git clone [https://github.com/shohnazar-abdusalomov/wedding-hall.git](https://github.com/shohnazar-abdusalomov/wedding-hall.git)
    cd wedding-hall
-Install dependencies
+   ```
 
-Bash
-npm install
-Set up environment variables
-Create a .env file in the root directory and configure your keys:
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-Code snippet
-VITE_API_URL=http://localhost:5000/api
-Start the development server
+3. **Set up environment variables**
+   Create a `.env` file in the root directory and configure your keys:
+   ```env
+   VITE_API_URL=http://localhost:5000/api
+   ```
 
-Bash
-npm run dev
-The app will be running at http://localhost:5173.
+4. **Start the development server**
+   ```bash
+   npm run dev
+   ```
 
-📁 Project Structure
-Plaintext
+The app will be running at `http://localhost:5173`.
+
+---
+
+## 📁 Project Structure
+
+```text
 wedding-hall/
 ├── public/              # Static assets (images, icons)
 ├── src/
@@ -76,34 +84,39 @@ wedding-hall/
 ├── package.json         # Project metadata and scripts
 ├── LICENSE              # MIT License
 └── README.md            # Project documentation
-🗺️ Roadmap
-[x] Core venue listing and detail views
+```
 
-[x] Responsive UI layout
+---
 
-[ ] Automated unit and integration tests
+## 🗺️ Roadmap
 
-[ ] Multi-language support (Uzbek, English, Russian)
+- [x] Core venue listing and detail views
+- [x] Responsive UI layout
+- [ ] Automated unit and integration tests
+- [ ] Multi-language support (Uzbek, English, Russian)
+- [ ] Online payment gateway integration
 
-[ ] Online payment gateway integration
+---
 
-🤝 Contributing
-Contributions are what make the open-source community thrive. Any contributions you make are greatly appreciated.
+## 🤝 Contributing
 
-Fork the Project
+Contributions are what make the open-source community thrive. Any contributions you make are **greatly appreciated**.
 
-Create your Feature Branch (git checkout -b feature/AmazingFeature)
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'feat: add AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-Commit your Changes (git commit -m 'feat: add AmazingFeature')
+---
 
-Push to the Branch (git push origin feature/AmazingFeature)
+## 📄 License
 
-Open a Pull Request
+Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more information.
 
-📄 License
-Distributed under the MIT License. See LICENSE for more information.
+---
 
-👤 Author
-Shohnazar Abdusalomov
+## 👤 Author
 
-GitHub: @shohnazar-abdusalomov
+**Shohnazar Abdusalomov**
+- GitHub: [@shohnazar-abdusalomov](https://github.com/shohnazar-abdusalomov)
